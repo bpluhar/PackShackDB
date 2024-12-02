@@ -1,29 +1,48 @@
-# Use an official Node runtime as a parent image
 FROM node:18-alpine AS base
 
-# Set environment variables for production
-ENV NODE_ENV=production
+# Install system dependencies
+RUN apk add --no-cache \
+    chromaprint \
+    chromaprint-dev \
+    ffmpeg \
+    ffmpeg-dev \
+    build-base \
+    python3 \
+    make \
+    g++ \
+    pkgconfig \
+    git \
+    libc6-compat
 
-# Set the working directory in the container
+# Set environment variables
+ENV NODE_ENV=production
+ENV PKG_CONFIG_PATH=/usr/lib/pkgconfig
+ENV CPLUS_INCLUDE_PATH=/usr/include/chromaprint:$CPLUS_INCLUDE_PATH
+
+# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json to install dependencies
+# Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm install --only=production
+# Install node-gyp globally (required for compiling native modules)
+RUN npm install -g node-gyp
+
+# Install dependencies
+RUN npm install --build-from-source --unsafe-perm
 
 # Copy the rest of the application code
 COPY . .
 
-# Set permissions (useful if you're using non-root users in production)
-RUN chown -R node:node /app
+# Create audio-files directory and set permissions
+RUN mkdir -p audio-files && \
+    chown -R node:node /app
 
-# Switch to a non-root user for security (optional, but recommended for production)
+# Switch to non-root user
 USER node
 
-# Expose the backend port (adjust if needed)
+# Expose port 3001
 EXPOSE 3001
 
-# Start the application
+# Run the app using the proper entry point (ensure server.js exists in the root)
 CMD ["node", "server.js"]

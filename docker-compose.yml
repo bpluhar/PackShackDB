@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:latest
+    hostname: db
+    environment:
+      POSTGRES_USER: packshack
+      POSTGRES_PASSWORD: packshackdb
+      POSTGRES_DB: packshackdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - /mnt/HDD/Docker/PackshackDB/db-data:/var/lib/postgresql/data
+      - /mnt/HDD/Docker/PackshackDB/audio-files:/audio-files
+      - /mnt/HDD/Docker/PackshackDB/db-init:/docker-entrypoint-initdb.d
+    networks:
+      Lan:
+        ipv4_address: 192.168.50.80
+    dns:
+      - 192.168.50.1
+    user: "999:999"
+
+  backend:
+    hostname: backend
+    build: /mnt/HDD/Docker/PackshackDB/backend
+    environment:
+      DATABASE_URL: postgres://packshack:packshackdb@192.168.50.80:5432/packshackdb
+    ports:
+      - "3001:3001"
+    volumes:
+      - /mnt/HDD/Docker/PackshackDB/audio-files:/app/audio-files
+    depends_on:
+      - db
+    networks:
+      Lan:
+        ipv4_address: 192.168.50.82
+    dns:
+      - 192.168.50.1
+    user: "1000:1000"
+
+  frontend:
+    hostname: frontend
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - /mnt/HDD/Docker/PackshackDB/frontend:/app
+    networks:
+      Lan:
+        ipv4_address: 192.168.50.83
+    dns:
+      - 192.168.50.1
+    user: "1000:1000"
+
+networks:
+  Lan:
+    external: true

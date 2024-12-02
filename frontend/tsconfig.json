@@ -1,9 +1,19 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": ".",  // Sets the base directory to resolve non-relative module names
     "paths": {
-      "@/*": ["src/*"]
-    }
+      "@/*": ["src/*"]  // Maps '@/' to 'src/'
+    },
+    "outDir": "./dist",  // Output directory for compiled files
+    "rootDir": "./src",  // Root directory for source files
+    "esModuleInterop": true,  // Ensures compatibility with CommonJS modules
+    "module": "esnext",  // Set the module system to ES6 or ESNext (depending on your needs)
+    "target": "es6",  // Choose a suitable JavaScript target version
+    "strict": true,  // Enable strict mode for better type safety
+    "jsx": "react-jsx",  // For React 17+ JSX transform
+    "moduleResolution": "node",  // Resolve modules like Node.js
+    "resolveJsonModule": true  // Enable importing JSON files
   },
-  "include": ["src"]
+  "include": ["src/**/*"],  // Include all files in the 'src' folder
+  "exclude": ["node_modules"]  // Exclude 'node_modules' from compilation
 }

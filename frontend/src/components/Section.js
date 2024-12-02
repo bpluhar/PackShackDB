@@ -1,14 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const Section = ({ id, title, className, children, titleSize = '2xl' }) => (
-  <section 
-    className={`p-8 ${className}`} 
+const Section = ({
+  id,
+  title,
+  className = '',
+  children,
+  titleSize = '2xl'
+}) => (
+  <section
+    className={`p-8 ${className}`}
     aria-labelledby={id}
   >
     <div>
-      <h2 
-        id={id} 
+      <h2
+        id={id}
         className={`text-${titleSize} font-semibold text-gray-800 mb-6`}
       >
         {title}
@@ -26,9 +32,6 @@ Section.propTypes = {
   titleSize: PropTypes.oneOf(['sm', 'lg', 'xl', '2xl', '3xl']),
 };
 
-Section.defaultProps = {
-  className: '',
-  titleSize: '2xl',
-};
+// Remove defaultProps entirely as we're using default parameters
 
 export default Section;

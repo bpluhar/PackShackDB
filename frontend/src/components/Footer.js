@@ -21,7 +21,7 @@ const Footer = ({ className }) => (
           Contact Us
         </a>
         <a
-          href="https://github.com/packshackdb"
+          href="https://github.com/Mr-Hubiverse/PackShackDB"
           className="text-sm text-blue-500 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded flex items-center"
           target="_blank"
           rel="noopener noreferrer"

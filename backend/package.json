@@ -6,10 +6,11 @@
   "dependencies": {
     "archiver": "^7.0.1",
     "bull": "^4.16.4",
-    "chromaprint": "^0.1.0",
+    "chromaprint": "0.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-rate-limit": "^7.1.5",
     "express-validator": "^7.2.0",
     "fs-extra": "^11.2.0",
     "helmet": "^8.0.0",

@@ -25,10 +25,15 @@ module.exports = {
     }),
   ],
   devServer: {
+    // Fix the deprecation warnings by using setupMiddlewares
     setupMiddlewares: (middlewares, devServer) => {
       if (!devServer) {
         throw new Error('webpack-dev-server is not defined');
       }
+
+      // You can add custom middleware here if needed
+
+      // Return the middlewares array as is
       return middlewares;
     },
   },

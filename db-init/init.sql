@@ -46,28 +46,24 @@ CREATE TABLE subcategories (
     UNIQUE(category_id, name)  -- Prevent duplicate subcategories within a category
 );
 
--- Folders table with enhanced path tracking
+-- Create the folders table
 CREATE TABLE folders (
     id SERIAL PRIMARY KEY,
     parent_id INTEGER REFERENCES folders(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    path_parts TEXT[] GENERATED ALWAYS AS (
-        CASE 
-            WHEN parent_id IS NULL THEN ARRAY[name]
-            ELSE array_append((SELECT path_parts FROM folders WHERE id = parent_id), name)
-        END
-    ) STORED,
-    full_path TEXT GENERATED ALWAYS AS (array_to_string(path_parts, '/')) STORED,
+    name VARCHAR(512) NOT NULL,
+    path_parts TEXT[] DEFAULT ARRAY[name],
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(parent_id, name)  -- Prevent duplicate folder names under same parent
+    full_path TEXT,  -- This will be populated by the trigger
+    UNIQUE(parent_id, name)
 );
 
--- Audio files table with enhanced metadata
+-- Create the audio files table
 CREATE TABLE audio_files (
     id SERIAL PRIMARY KEY,
-    filename VARCHAR(255) NOT NULL,
-    filepath VARCHAR(255) NOT NULL UNIQUE,
-    original_filename VARCHAR(255) NOT NULL,
+    filename VARCHAR(512) NOT NULL,  -- Increased the length
+    filepath VARCHAR(512) NOT NULL UNIQUE,  -- Increased the length
+    original_filename VARCHAR(512) NOT NULL,  -- Increased the length
+    fingerprint VARCHAR(512) NOT NULL UNIQUE,
     manufacturer_id INTEGER REFERENCES manufacturers(id) ON DELETE SET NULL,
     sample_pack_id INTEGER REFERENCES sample_packs(id) ON DELETE SET NULL,
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
@@ -89,14 +85,14 @@ CREATE TABLE audio_files (
     CHECK (channels IS NULL OR channels > 0)
 );
 
--- Tags table for audio files
+-- Create the tags table
 CREATE TABLE tags (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Many-to-many relationship between audio_files and tags
+-- Create the audio files tags table
 CREATE TABLE audio_files_tags (
     audio_file_id INTEGER REFERENCES audio_files(id) ON DELETE CASCADE,
     tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
@@ -211,3 +207,18 @@ $$ LANGUAGE plpgsql;
 -- Grant permissions
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO packshack;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO packshack;
+
+-- Create function to update full_path based on path_parts
+CREATE OR REPLACE FUNCTION update_full_path() 
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.full_path := array_to_string(NEW.path_parts, '/');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to update full_path on insert or update
+CREATE TRIGGER trigger_update_full_path
+BEFORE INSERT OR UPDATE ON folders
+FOR EACH ROW
+EXECUTE FUNCTION update_full_path();
