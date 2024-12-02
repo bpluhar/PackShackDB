@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Loader2, AlertCircle } from 'lucide-react';
 
-const DownloadButton = ({ audioFileUrl, fileName = 'audio-file.wav' }) => {
+const DownloadButton = ({ fileId, fileName }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -10,29 +10,31 @@ const DownloadButton = ({ audioFileUrl, fileName = 'audio-file.wav' }) => {
     setError(null);
 
     try {
-      const response = await fetch(audioFileUrl);
-
+      // Use the new download endpoint
+      const response = await fetch(`http://192.168.50.82:3001/api/download/${fileId}`);
+      
       if (!response.ok) {
-        throw new Error(`Download failed: ${response.statusText}`);
+        throw new Error(
+          response.status === 404 
+            ? 'File not found' 
+            : `Download failed: ${response.statusText}`
+        );
       }
 
-      // Extract filename from the Content-Disposition header or use the default fileName
+      // Get filename from Content-Disposition header
       const disposition = response.headers.get('Content-Disposition');
-      const extractedFileName =
-        disposition?.match(/filename="(.+)"/)?.[1] ?? fileName;
+      const extractedFileName = disposition?.match(/filename="(.+)"/)?.[1] ?? fileName;
 
-      // Read the file content as a Blob
+      // Create blob from response
       const audioFileData = await response.blob();
       const url = URL.createObjectURL(audioFileData);
 
-      // Create a temporary anchor element for downloading
+      // Trigger download
       const link = document.createElement('a');
       link.href = url;
       link.download = extractedFileName;
       document.body.appendChild(link);
       link.click();
-
-      // Cleanup: remove the link and revoke the object URL
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -45,7 +47,6 @@ const DownloadButton = ({ audioFileUrl, fileName = 'audio-file.wav' }) => {
 
   return (
     <div className="inline-block">
-      {/* Error Message */}
       {error && (
         <div className="mb-4 flex items-center gap-2 text-red-500">
           <AlertCircle className="h-5 w-5" />
@@ -53,13 +54,14 @@ const DownloadButton = ({ audioFileUrl, fileName = 'audio-file.wav' }) => {
         </div>
       )}
 
-      {/* Download Button */}
       <button
         onClick={handleDownload}
         disabled={isLoading}
         aria-busy={isLoading}
         aria-label="Download audio file"
-        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-700 text-white font-semibold 
+                   py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 
+                   disabled:cursor-not-allowed shadow-md"
       >
         {isLoading ? (
           <Loader2 className="h-5 w-5 animate-spin" />
