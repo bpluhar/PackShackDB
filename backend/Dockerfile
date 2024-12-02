@@ -16,6 +16,12 @@ RUN npm install --only=production
 # Copy the rest of the application code
 COPY . .
 
+# Set permissions (useful if you're using non-root users in production)
+RUN chown -R node:node /app
+
+# Switch to a non-root user for security (optional, but recommended for production)
+USER node
+
 # Expose the backend port (adjust if needed)
 EXPOSE 3001
 

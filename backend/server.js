@@ -1,3 +1,5 @@
+// server.js
+
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -7,8 +9,15 @@ const { parseFile } = require('music-metadata');
 const chromaprint = require('chromaprint');
 const morgan = require('morgan');
 const fs = require('fs').promises;
+const dotenv = require('dotenv');
 
+// Load environment variables from .env file
+dotenv.config();
+
+// Create an Express app instance
 const app = express();
+
+// Set server port
 const port = process.env.PORT || 3001;
 
 // Middleware setup
@@ -16,7 +25,7 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
-// PostgreSQL connection
+// PostgreSQL connection pool setup
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -34,8 +43,7 @@ async function deleteFile(filePath) {
 // Helper: Generate audio fingerprint
 async function generateFingerprint(filePath) {
   try {
-    const fingerprint = await chromaprint(filePath);
-    return fingerprint;
+    return await chromaprint(filePath);
   } catch (error) {
     console.error('Error generating fingerprint:', error);
     throw new Error('Failed to generate fingerprint');
@@ -56,10 +64,8 @@ async function getOrCreateFolder(folderPath) {
          RETURNING id`,
         [folderName, parentId]
       );
-
       parentId = result.rows[0]?.id || parentId;
     }
-
     return parentId;
   } catch (error) {
     console.error('Error in getOrCreateFolder:', error);
@@ -153,7 +159,7 @@ async function getAudioMetadata(filePath) {
 
 // Multer storage configuration
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, '/app/audio-files'),
+  destination: (req, file, cb) => cb(null, 'audio-files'),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
@@ -183,7 +189,7 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
     const uploadedFiles = [];
 
     for (const file of files) {
-      const metadata = JSON.parse(req.body[`metadata`] || '{}');
+      const metadata = JSON.parse(req.body.metadata || '{}');
       const audioMetadata = await getAudioMetadata(file.path);
       const fingerprint = await generateFingerprint(file.path);
 
@@ -198,7 +204,7 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
         continue;
       }
 
-      const filePath = `/app/audio-files/${file.filename}`;
+      const filePath = `audio-files/${file.filename}`;
       const folderPath = path.dirname(metadata.path || file.originalname);
 
       const manufacturerId = await detectManufacturer(file.originalname, metadata.path);
@@ -250,6 +256,11 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
       await deleteFile(file.path);
     }
   }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ message: 'Server is healthy' });
 });
 
 // Start the server
